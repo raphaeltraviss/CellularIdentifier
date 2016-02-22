@@ -1,0 +1,21 @@
+{
+    "name": "raphaeltraviss/CellularIdentifier",
+    "description": "Converts cellular device identifiers between different specifications and formats.",
+    "license": "MIT",
+    "keywords": ["cellular", "device", "cellphone", "meid", "esn", "imei"],
+    "authors": [
+        {
+            "name": "Raphael Traviss",
+            "email": "raphael@skyleafdesign.com"
+        }
+    ],
+    "require": {},
+    "require-dev": {
+        "phpunit/phpunit": "5.2.*"
+    },
+    "autoload": {
+        "psr-4": {
+            "RaphaelTraviss\\CellularIdentifier\\": "src"
+        }
+    }
+}
