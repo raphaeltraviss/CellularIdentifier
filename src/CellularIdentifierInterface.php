@@ -55,6 +55,13 @@ interface CellularIdentifierInterface {
   public function iccid();
 
   /**
+   * Do all transformations that are valid for the current identifier.
+   *
+   * @return: array
+   */
+  public function all();
+
+  /**
    * Returns the value of the check digit for the current specification and format.
    *
    * The check digit is never included in $this->value(); you need to specifically
@@ -76,12 +83,12 @@ interface CellularIdentifierInterface {
    *
    * @return: string
    */
-  public function getFormat();
+  public function format();
 
   /**
    * Access the specification of the current cellular identifier tranformation.
    *
    * @return: string
    */
-  public function getSpecification();
+  public function specification();
 }

@@ -1,6 +1,6 @@
 <?php
 /**
- * Containes teh CellularIdentifier class.
+ * Containes the CellularIdentifier class.
  */
 
 namespace Skyleaf\CellularIdentifier;
@@ -12,74 +12,67 @@ namespace Skyleaf\CellularIdentifier;
  */
 class CellularIdentifier implements CellularIdentifierInterface {
   public function hex() {
-    switch ($this->specification) {
-      case Specification::ESN:
-        if (!isset($this->cachedValues[Specification::ESN . Format::hexadecimal])) {
-          $this->cachedValues[Specification::ESN . Format::hexadecimal] = $this->transformIdentifier(16, 3, 2, 6);
-        }
-        $this->format = Format::hexadecimal;
-        break;
-      case Specification::IMEI:
-        // Do nothing.  The IMEI specification calls for all-decimal digits.
-        break;
-      case Specification::MEID:
-        if (!isset($this->cachedValues[Specification::MEID . Format::hexadecimal])) {
-          $this->cachedValues[Specification::MEID . Format::hexadecimal] = $this->transformIdentifier(16, 10, 8, 6);
-        }
-        $this->format = Format::hexadecimal;
-        break;
-      case Specification::ICCID:
-        // Not implemented yet.
-        break;
-    }
-
+    $this->mutateToFormat(Format::hexadecimal);
     return $this;
   }
 
   public function dec() {
-
-    $this->format = Format::decimal;
+    $this->mutateToFormat(Format::decimal);
     return $this;
   }
 
   public function esn() {
-
-    $this->specification = Specification::ESN;
+    // Test to see if we have a valid hex MEID.
+    $this->mutateToSpecification(Specification::ESN);
     return $this;
   }
 
   public function meid() {
-
-    $this->specification = Specification::MEID;
+    // No other formats besides MEID can be converted to MEID.
+    // IMEIs are valid MEIDs, but not for purposes of calculation, since the radix is different.
     return $this;
   }
 
   public function imei() {
-
-    $this->specification = Specification::IMEI;
+    // No other formats besides IMEI can be converted to IMEI.
+    // Be aware that some devices have TWO identifiers.  This would be true for
+    // phones that have both a CDMA and a GSM radio; they may have one unique identifier
+    // for each.  In which case, the IMEI/MEID printed on the label will not match
+    // the value you get from this conversion: nothing we can do about it.  Other
+    // devices, such as the Apple iPhone, use the same identifier for both.
     return $this;
   }
 
   public function iccid() {
-    // Not implemented
-    $this->specification = Specification::ICCID;
+    // Not implemented.
     return $this;
   }
 
+  public function all() {
+    return $this->cachedValues;
+  }
+
   public function value() {
-    print_r($this->cachedValues);
     return $this->cachedValues[$this->specification . $this->format];
   }
 
-  public function getFormat() {
-    return '';
+  public function specification() {
+    return $this->specification;
   }
 
-  public function getSpecification() {
-    return '';
+  public function format() {
+    return $this->format;
+  }
+
+  public function manufacturer() {
+    // Not implemented yet.
+    return null;
   }
 
   public function checkDigit() {
+
+    // Calculating the check digit for an all-decimal hex MEID could fail, because you
+    // can't be sure whether the device ID is a base-10 IMEI or a base-16 MEID.
     $check_digit = false;
 
     // Check digits must always be calculated using the
@@ -157,6 +150,24 @@ class CellularIdentifier implements CellularIdentifierInterface {
    */
   protected $cachedValues = array();
 
+  /**
+   * Maps transformation functions to keys based on the current specification and format.
+   *
+   * Keys are of the form Specification . Format (original) . Format (desired).
+   *
+   * @var array
+   */
+  protected $formatTransformations = array();
+
+  /**
+   * Maps transformation functions to keys based on the current specification.
+   *
+   * Keys are of the form Specification (original) . Specification (desired).
+   *
+   * @var array
+   */
+  protected $specificationTransformations = array();
+
 
 
 
@@ -170,16 +181,64 @@ class CellularIdentifier implements CellularIdentifierInterface {
 
 
   public function __construct($inputIdentifier) {
-    // Inintialize cached values all as null.
-    $cacheKeys = array(
+    // Initialize cached values as null.
+    $cache_keys = array(
       Specification::ESN . Format::decimal,
       Specification::ESN . Format::hexadecimal,
       Specification::MEID . Format::decimal,
       Specification::MEID . Format::hexadecimal,
-      Specification::IMEI . Format::checkDigit,
+      Specification::MEID . Format::checkDigit,
       Specification::ICCID . Format::decimal
     );
-    $this->cachedValues = array_combine($cacheKeys, array_fill(0, count($cacheKeys), null));
+    $this->cachedValues = array_combine($cache_keys, array_fill(0, count($cache_keys), null));
+
+    // Initialize format transformation function mapping; only ESN/MEID can be converted between formats.
+    $formatter_function_keys = array(
+      Specification::ESN . Format::hexadecimal . Format::decimal,
+      Specification::ESN . Format::decimal . Format::hexadecimal,
+      Specification::MEID . Format::hexadecimal . Format::decimal,
+      Specification::MEID . Format::decimal . Format::hexadecimal,
+    );
+
+    $formatter_function = function($source_value, $source_radix, $destination_radix, $break_at_index, $prefix_length, $suffix_length) {
+      $zeroPad = function($input, $length) use (&$zeroPad) {
+        return ($length <= strlen($input)) ? $input : $zeroPad(0 . $input, $length);
+      };
+
+      // Break the input into two parts; transform, pad, and concatenate both parts.
+      return strtoupper(
+        $zeroPad(base_convert(substr($source_value, 0, $break_at_index), $source_radix, $destination_radix), $prefix_length) .
+        $zeroPad(base_convert(substr($source_value, $break_at_index), $source_radix, $destination_radix), $suffix_length)
+      );
+    };
+
+    $formatter_functions = array(
+      function() use ($formatter_function) { return $formatter_function($this->value(), 16, 10, 2, 3, 8); },
+      function() use ($formatter_function) { return $formatter_function($this->value(), 10, 16, 3, 2, 6); },
+      function() use ($formatter_function) { return $formatter_function($this->value(), 16, 10, 8, 10, 8); },
+      function() use ($formatter_function) { return $formatter_function($this->value(), 10, 16, 10, 8, 6); }
+    );
+    $this->formatTransformations = array_combine($formatter_function_keys, $formatter_functions);
+
+    // Initialize specification transformation functions; currently there is only one.
+    $specification_function_keys = array(
+      Specification::MEID . Specification::ESN
+    );
+
+    $specification_function = function($meid_hex) {
+      $output = '';
+      for ($i = 0; $i < strlen($meid_hex); $i += 2){
+        $output .= chr(intval(substr($meid_hex, $i, 2), 16));
+      }
+      $hash = sha1($output);
+      return strtoupper("80".substr($hash,(strlen($hash) -6)));
+    };
+
+    $specification_functions = array(
+      function() { return $specification_function($this->value()); }
+    );
+
+    $this->specificationTransformations = array_combine($specification_function_keys, $specification_functions);
 
     return $this->filterInput($inputIdentifier);
   }
@@ -187,6 +246,9 @@ class CellularIdentifier implements CellularIdentifierInterface {
   public function __toString() {
     return $this->value();
   }
+
+
+
 
 
 
@@ -201,16 +263,6 @@ class CellularIdentifier implements CellularIdentifierInterface {
 
 
 
-  /**
-   * Maps a format to an integer radix.
-   *
-   * @var array
-   */
-  protected $radix = array(
-    Format::decimal => 10,
-    Format::hexadecimal => 16
-  );
-
 
   /**
    * Filter input text through patterns, and set internal state based on the results.
@@ -221,94 +273,87 @@ class CellularIdentifier implements CellularIdentifierInterface {
    */
   protected function filterInput($input) {
     // An IMEI with check digit is 15 characters long, all of them decimal.
+    // IMEI are handled internally the same as hex MEID.  An identifier that matches
+    // the pattern for an IMEI could actually be an MEID.
     if(preg_match('/^[0-9]{15}$/', $input)){
-      $this->cachedValues[Specification::IMEI . Format::decimal] = substr($input, 0, -1);
-      $this->cachedValues[Specification::IMEI . Format::checkDigit] = substr($input, 13, 1);
-      $this->format = Format::decimal;
       $this->specification = Specification::IMEI;
+      $this->format = Format::hexadecimal;
+      // maybe set radix here?
 
     // An IMEI without a check digit is 14 characters long, all of them decimal.
     } else if(preg_match('/^[0-9]{14}$/', $input)){
-      $this->cachedValues[[Specification::IMEI . Format::decimal]] = $input;
-      $this->format = Format::decimal;
       $this->specification = Specification::IMEI;
+      $this->format = Format::hexadecimal;
 
     // An MEID in hexadecimal format is 14 characters long, all of them decimals or letters a-f in any case.
     } else if(preg_match('/^[a-fA-F0-9]{14}$/', $input)){
-      $this->cachedValues[Specification::MEID . Format::hexadecimal] = $input;
-      $this->format = Format::hexadecimal;
       $this->specification = Specification::MEID;
+      $this->format = Format::hexadecimal;
 
     // An MEID in decimal format is 18 characters long, all of them decimals.
     } else if(preg_match('/^[0-9]{18}$/', $input)){
-      $this->cachedValues[Specification::MEID . Format::decimal] = $input;
-      $this->format = Format::decimal;
       $this->specification = Specification::MEID;
+      $this->format = Format::decimal;
 
     // An ESN in hexadecimal format is 8 characters long, all of them decimals or letters a-f in any case.
     } else if(preg_match('/^[a-fA-F0-9]{8}$/', $input)){
-      $this->cachedValues[Specification::ESN . Format::hexadecimal] = $input;
-      $this->format = Format::hexadecimal;
       $this->specification = Specification::ESN;
+      $this->format = Format::hexadecimal;
 
     // An ESN in decimal format is 11 characters long, all of them decimals.
     } else if(preg_match('/^[0-9]{11}$/', $input)){
-      $this->cachedValues[Specification::ESN . Format::decimal] = $input;
-      $this->format = Format::decimal;
       $this->specification = Specification::ESN;
+      $this->format = Format::decimal;
 
     // If none of the patterns matched, then they gave us something other than a device ID.
     } else {
       return false;
     }
 
-    $this->value = $input;
+    // Cache the input value, after making it uppercase.
+    $this->cachedValues[$this->specification . $this->format] = strtoupper($input);
     return true;
   }
 
   /**
-   * Calculates a hexadecimal pseudo ESN, given a hexadecimal MEID without a check digit.
+   * Mutates the identifier to a given format and caches values.
    *
-   * @return  string The calculated pseudo ESN.
+   * @var: string $format The format to mutate to; constant of class Format.
    */
-  protected function calculatePseudoESN($identifier){
-    $p = '';
-    for ($i = 0; $i < strlen($input); $i += 2){
-      $p .= chr(intval(substr($input, $i, 2), 16));
+  protected function mutateToFormat($format) {
+    if (isset($this->cachedValues[$this->specification . $format])) {
+      $this->format = $format;
     }
-    $hash = sha1($p);
-
-    return strtoupper("80".substr($hash,(strlen($hash) -6)));
+    else {
+      $conversion_function = $this->formatTransformations[$this->specification . $this->format . $format];
+      if (isset($conversion_function)) {
+        $conversion_result = $conversion_function();
+        if ($conversion_result) {
+          $this->cachedValues[$this->specification . $format] = $conversion_result;
+          $this->format = $format;
+        }
+      }
+    }
   }
 
   /**
-   * Transforms a serial number from hexadecimal to decimal, or vise versa.
+   * Mutates the identifier to a given specification and caches values.
    *
-   * This is done by splitting the identifier into two parts, converting each part,
-   * and then padding with zeroes until the desired lenght is reached to fit the specification.
-   *
-   * @param int $destinationRadix - The radix of the transformed serial number.
-   * @param int $breakAtCharacterIndex - The length of the first part of the destination identifier format/specification.
-   * @param int $prefixLength - The length of the first part of the destination identifier after transformation.
-   * @param int $suffixLength - The length of the second part of the destination identifier after transformation.
-   * @return string - The transformed serial number
+   * @var: string $specification The specification to mutate to; constant of class Specification.
    */
-    protected function transformIdentifier($destinationRadix, $breakAtCharacterIndex, $prefixLength, $suffixLength) {
-      $zeroPad = function($input, $length) use (&$zeroPad) {
-        if ($length <= strlen($input)) {
-          return $input;
-        }
-        return $zeroPad(0 . $input, $length);
-      };
-
-      // Break the input into two parts.  For each part, transform the the destination radix,
-      // and left-pad with zeroes until it meets the spec.
-      $currentRadix = $this->radix[$this->format];
-      $result = strtoupper(
-        $zeroPad(base_convert(substr($this->value, 0, $breakAtCharacterIndex), $currentRadix, $destinationRadix), $prefixLength) .
-        $zeroPad(base_convert(substr($this->value, $breakAtCharacterIndex), $currentRadix, $destinationRadix), $suffixLength)
-      );
-
-      return $result;
+  protected function mutateToSpecification($specification) {
+    if (isset($this->cachedValues[$specification . $this->format])) {
+      $this->specification = $specification;
     }
+    else {
+      $conversion_function = $this->specificationTransformations[$this->specification . $specification];
+      if (isset($conversion_function)) {
+        $conversion_result = $conversion_function();
+        if ($conversion_result) {
+          $this->cachedValues[$specification . $this->format] = $conversion_result;
+          $this->specification = $specification;
+        }
+      }
+    }
+  }
 }

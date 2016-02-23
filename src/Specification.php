@@ -11,6 +11,6 @@ namespace Skyleaf\CellularIdentifier;
 abstract class Specification {
   const ESN = 'esn';
   const MEID = 'meid';
-  const IMEI = 'imei';
+  const IMEI = 'meid';
   const ICCID = 'iccid';
 }
