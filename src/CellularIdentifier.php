@@ -8,6 +8,15 @@ namespace Skyleaf\CellularIdentifier;
 /**
  * Converts between various formats and specifications of cellular devices.
  *
+ * This class performs the following general operations:
+ *  - It matches the input identifier against patterns to determine the starting spec/format.
+ *  - It responds to mutation requests by matching the current spec/format to a
+ *    function that will perform the desired mutation.  All of these functions are referenced
+ *    by a common set of strings contained in abstract class contants.
+ *  - It performs the mutation and caches the new spec/format value.
+ *  - After the mutations are performed, you can use the public API to get the new
+ *    data, such as the current value and check digit.
+ *
  * @implements CellularIdentifierInterface
  */
 class CellularIdentifier implements CellularIdentifierInterface {

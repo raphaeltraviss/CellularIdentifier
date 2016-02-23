@@ -6,56 +6,6 @@ use Skyleaf\CellularIdentifier\Format;
 
 class ConversionTest extends PHPUnit_Framework_TestCase {
 
-  // A list of imaginary devices, with pre-calculated values.
-  // In order to accurately test this libary agains actual device identifiers, these
-  // made-up values are inside the valid manufacturer prefix and serial number ranges,
-  // meaning that they could intersect with an actual device, somewhere: if this
-  // occurs, it is purely coincidental.  Unfortunaley the MEID specification does
-  // not define any ranges for testing and examples.
-  protected $exampleDevices = array(
-    // An example of a UTStarcom identifier.
-    array(
-      Specification::MEID . Format::hexadecimal => '99000001123456',
-      Specification::MEID . Format::decimal => '256691404901193046',
-      Specification::ESN . Format::hexadecimal => '80C06296',
-      Specification::ESN . Format::decimal => '12812608150'
-    ),
-
-    // An example of a Samsung identifier.
-    array(
-      Specification::MEID . Format::hexadecimal => 'A10000004F1A0C',
-      Specification::MEID . Format::decimal => '270113177605184012',
-      Specification::ESN . Format::hexadecimal => '8017659D',
-      Specification::ESN . Format::decimal => '12801533341'
-    ),
-
-    // An example of an LG Electronics identifier.
-    // Test mixed-case hexadecimal digits.
-    array(
-      Specification::MEID . Format::hexadecimal => 'A000000c1124aC',
-      Specification::MEID . Format::decimal => '268435457201123500',
-      Specification::ESN . Format::hexadecimal => '803f3D13',
-      Specification::ESN . Format::decimal => '12804144403'
-    ),
-
-    // An example of an LG Electronics identifier.
-    array(
-      Specification::MEID . Format::hexadecimal => '99000001abcdef',
-      Specification::MEID . Format::decimal => '256691404911259375',
-      Specification::ESN . Format::hexadecimal => '80AE567C',
-      Specification::ESN . Format::decimal => '12811425404'
-    ),
-
-    // An example of an Apple identifier.
-    array(
-      Specification::MEID . Format::hexadecimal => '35695706001456',
-      Specification::MEID . Format::decimal => '089609600600005206',
-      Specification::ESN . Format::hexadecimal => '80AAD01F',
-      Specification::ESN . Format::decimal => '12811194399'
-    )
-  );
-
-
   public function testHexDecConversion() {
     $known_device = array_rand($this->exampleDevices);
     $known_identifier = array_rand($this->exampleDevices[$known_device]);
@@ -87,4 +37,88 @@ class ConversionTest extends PHPUnit_Framework_TestCase {
   // ESN->meid should not change the specification.
 
   // IMEI->MEID or ESN should not change the specification.
+
+
+
+
+
+
+  // Private nternal state.
+
+
+
+
+
+
+  /**
+   * A list of imaginary devices, with pre-calculated values.
+   *
+   * In order to accurately test this libary agains actual device identifiers, these
+   * made-up values are inside the valid manufacturer prefix and serial number ranges,
+   * meaning that they could intersect with an actual device, somewhere: if this
+   * occurs, it is purely coincidental.  Unfortunaley the MEID specification does
+   * not define any ranges for testing and examples. Filled during initialization.
+   */
+  protected $exampleDevices = array();
+
+
+
+
+
+
+
+
+  // Magic methods.
+
+
+
+
+
+
+
+  public function __construct() {
+    parent::__construct();
+
+    // PHP 5.3 array key workaround when using concatenation to form array keys.
+    $device_array_keys = array(
+      Specification::MEID . Format::hexadecimal,
+      Specification::MEID . Format::decimal,
+      Specification::ESN . Format::hexadecimal,
+      Specification::ESN . Format::decimal
+    );
+
+    $starcom_values = array(
+      '99000001123456', // Tests all-decimal MEID.
+      '256691404901193046',
+      '80C06296',
+      '12812608150'
+    );
+    $starcom_device = array_combine($device_array_keys, $starcom_values);
+
+    $samsung_values = array(
+      'A10000004F1A0C',
+      '270113177605184012',
+      '8017659D',
+      '12801533341'
+    );
+    $samsung_device = array_combine($device_array_keys, $samsung_values);
+
+    $lg_values = array(
+      'A000000c1124aC',
+      '268435457201123500',
+      '803f3D13',  // Tests input with mixed-case.
+      '12804144403'
+    );
+    $lg_device = array_combine($device_array_keys, $lg_values);
+
+    $apple_values = array(
+      '35695706001456',
+      '089609600600005206',
+      '80AAD01F',
+      '12811194399'
+    );
+    $apple_device = array_combine($device_array_keys, $apple_values);
+
+    $this->exampleDevices = array($starcom_device, $samsung_device, $lg_device, $apple_device);
+  }
 }
