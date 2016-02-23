@@ -221,11 +221,12 @@ class CellularIdentifier implements CellularIdentifierInterface {
       );
     };
 
+    $php53fixThis = $this;
     $formatter_functions = array(
-      function() use ($formatter_function) { return $formatter_function($this->value(), 16, 10, 2, 3, 8); },
-      function() use ($formatter_function) { return $formatter_function($this->value(), 10, 16, 3, 2, 6); },
-      function() use ($formatter_function) { return $formatter_function($this->value(), 16, 10, 8, 10, 8); },
-      function() use ($formatter_function) { return $formatter_function($this->value(), 10, 16, 10, 8, 6); }
+      function() use ($formatter_function, $php53fixThis) { return $formatter_function($php53fixThis->value(), 16, 10, 2, 3, 8); },
+      function() use ($formatter_function, $php53fixThis) { return $formatter_function($php53fixThis->value(), 10, 16, 3, 2, 6); },
+      function() use ($formatter_function, $php53fixThis) { return $formatter_function($php53fixThis->value(), 16, 10, 8, 10, 8); },
+      function() use ($formatter_function, $php53fixThis) { return $formatter_function($php53fixThis->value(), 10, 16, 10, 8, 6); }
     );
     $this->formatTransformations = array_combine($formatter_function_keys, $formatter_functions);
 
