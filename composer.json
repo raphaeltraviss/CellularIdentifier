@@ -1,8 +1,8 @@
 {
-    "name": "raphaeltraviss/CellularIdentifier",
+    "name": "skyleaf/CellularIdentifier",
     "description": "Converts cellular device identifiers between different specifications and formats.",
     "license": "MIT",
-    "keywords": ["cellular", "device", "cellphone", "meid", "esn", "imei"],
+    "keywords": ["cellular", "device", "cellphone", "meid", "esn", "imei", "decimal", "hexadecimal"],
     "authors": [
         {
             "name": "Raphael Traviss",
@@ -16,7 +16,7 @@
     },
     "autoload": {
         "psr-4": {
-            "RaphaelTraviss\\CellularIdentifier\\": "src"
+            "Skyleaf\\CellularIdentifier\\": "src"
         }
     }
 }

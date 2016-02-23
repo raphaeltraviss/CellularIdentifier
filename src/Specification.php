@@ -3,14 +3,14 @@
  * Contains the Specification abstract class.
  */
 
-namespace RaphaelTraviss\CellularIdentifier;
+namespace Skyleaf\CellularIdentifier;
 
 /**
  * Holds possible choices for specifications, similar to an enum in other languages.
  */
 abstract class Specification {
-  const esn = 'ESN';
-  const meid = 'MEID';
-  const imei = 'IMEI';
-  const iccid = 'ICCID';
+  const ESN = 'esn';
+  const MEID = 'meid';
+  const IMEI = 'imei';
+  const ICCID = 'iccid';
 }

@@ -3,7 +3,7 @@
  * Containes the CellularIdentifierInterface interface.
  */
 
-namespace RaphaelTraviss\CellularIdentifier;
+namespace Skyleaf\CellularIdentifier;
 
 /**
  * Specifies the public API that Cellular identifier classes must conform to.
@@ -55,21 +55,21 @@ interface CellularIdentifierInterface {
   public function iccid();
 
   /**
-   * Transforms a device identifier to include the check digit.
+   * Returns the value of the check digit for the current specification and format.
    *
-   * The check digit is never included in $this->value() unless you specifically
-   * ask for it using this method.
+   * The check digit is never included in $this->value(); you need to specifically
+   * ask for it using this method, and append it yourself.
    *
-   * @return: CellularIdentifier
+   * @return: int
    */
-  public function withCheckDigit();
+  public function checkDigit();
 
   /**
    * Access the value of the current cellular identifier transformation.
    *
    * @return: string
    */
-  public function getValue();
+  public function value();
 
   /**
    * Access the format of the current cellular identifier tranformation.
@@ -84,11 +84,4 @@ interface CellularIdentifierInterface {
    * @return: string
    */
   public function getSpecification();
-
-  /**
-   * Access the current value of the check digit for the current cellular identifier transformation.
-   *
-   * @return: string
-   */
-  public function getCheckDigit();
 }
