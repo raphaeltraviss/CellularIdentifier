@@ -155,14 +155,15 @@ class CellularIdentifier implements CellularIdentifierInterface {
    *
    * @var array
    */
-  protected $cachedValues = array(
-    Specification::ESN . Format::decimal => null,
-    Specification::ESN . Format::hexadecimal => null,
-    Specification::MEID . Format::decimal => null,
-    Specification::MEID . Format::hexadecimal => null,
-    Specification::IMEI . Format::checkDigit => null,
-    Specification::ICCID . Format::decimal => null
-  );
+  protected $cachedValues = array_combine(array(
+    Specification::ESN . Format::decimal,
+    Specification::ESN . Format::hexadecimal,
+    Specification::MEID . Format::decimal,
+    Specification::MEID . Format::hexadecimal,
+    Specification::IMEI . Format::checkDigit,
+    Specification::ICCID . Format::decimal
+  // Workaround for PHP 5.3.
+  ), array(null, null, null, null, null, null));
 
 
 
