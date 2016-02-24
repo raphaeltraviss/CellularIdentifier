@@ -234,7 +234,8 @@ class CellularIdentifier implements CellularIdentifierInterface {
 
     $specification_functions = array(
       // MEID -> ESN conversion function.
-      function() use ($php53FixThis) {
+      var $php53FixProtectedProperty = $this->formatTransformations;
+      function() use ($php53FixThis, $php53FixMe, $php53FixMeToo) {
         // Given a hex identifier, returns a pseudo ESN.
         $calculatePseudoESN = function($meid_hex) {
           $output = '';
@@ -249,13 +250,13 @@ class CellularIdentifier implements CellularIdentifierInterface {
         $result = '';
         if ($php53FixThis->format() != Format::hexadecimal) {
           // Find the fuction to convert our current value into hex.
-          $hex_function = $php53FixThis->formatTransformations[$php53FixThis->specification() . $php53FixThis->format() . Format::hexadecimal];
+          $hex_function = $php53FixProtectedProperty[$php53FixThis->specification() . $php53FixThis->format() . Format::hexadecimal];
           // Get the hex value using the tranformation function we just found.
           $hex_meid = $hex_function($php53FixThis->value());
           // Calculate the pseudo ESN using the hex value we just found.
           $pseudo_ESN = $calculatePseudoESN($hex_meid);
           // Find yet another function to turn that pseudo ESN into our current format.
-          $esn_function = $php53FixThis->formatTransformations[Specification::ESN . Format::hexadecimal . $php53FixThis->format()];
+          $esn_function = $php53FixProtectedProperty[Specification::ESN . Format::hexadecimal . $php53FixThis->format()];
           // Transform the pseudo ESN into our current format.
           $result = $esn_function($pseudo_ESN);
         } else {
