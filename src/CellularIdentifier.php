@@ -203,6 +203,8 @@ class CellularIdentifier implements CellularIdentifierInterface {
       );
     };
 
+    // Fix for PHP 5.3 concatenated array keys.  Note that closures in PHP 5.3 can
+    // only use the public API of an object passed into them.
     $php53FixThis = $this;
 
     $formatter_functions = array(
@@ -211,15 +213,15 @@ class CellularIdentifier implements CellularIdentifierInterface {
         return $formatter_function($valueToConvert, 16, 10, 2, 3, 8);
       },
       // ESN dec to hex.
-      function($valueToConvert) use ($formatter_function, $php53FixThis) {
+      function($valueToConvert) use ($formatter_function) {
         return $formatter_function($valueToConvert, 10, 16, 3, 2, 6);
       },
       // MEID hex to dec.
-      function($valueToConvert) use ($formatter_function, $php53FixThis) {
+      function($valueToConvert) use ($formatter_function) {
         return $formatter_function($valueToConvert, 16, 10, 8, 10, 8);
       },
       //MEID dec to hex.
-      function($valueToConvert) use ($formatter_function, $php53FixThis) {
+      function($valueToConvert) use ($formatter_function) {
         return $formatter_function($valueToConvert, 10, 16, 10, 8, 6);
       }
     );
@@ -247,13 +249,13 @@ class CellularIdentifier implements CellularIdentifierInterface {
         $result = '';
         if ($php53FixThis->format() != Format::hexadecimal) {
           // Find the fuction to convert our current value into hex.
-          $hex_function = $php53FixThis->formatTransformations[$php53FixThis->specification . $php53FixThis->format . Format::hexadecimal];
+          $hex_function = $php53FixThis->formatTransformations[$php53FixThis->specification() . $php53FixThis->format() . Format::hexadecimal];
           // Get the hex value using the tranformation function we just found.
           $hex_meid = $hex_function($php53FixThis->value());
           // Calculate the pseudo ESN using the hex value we just found.
           $pseudo_ESN = $calculatePseudoESN($hex_meid);
           // Find yet another function to turn that pseudo ESN into our current format.
-          $esn_function = $php53FixThis->formatTransformations[Specification::ESN . Format::hexadecimal . $php53FixThis->format];
+          $esn_function = $php53FixThis->formatTransformations[Specification::ESN . Format::hexadecimal . $php53FixThis->format()];
           // Transform the pseudo ESN into our current format.
           $result = $esn_function($pseudo_ESN);
         } else {
