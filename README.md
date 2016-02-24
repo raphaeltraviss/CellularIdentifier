@@ -11,10 +11,10 @@ This class will allow you to convert a cellular device identification number fro
 // All identifiers and conversion values in this example are fictitious.
 $identifier = new CellularIdentifier('123456789012345678');
 $identifier->specification; // 'MEID'
-$identifier->format; // 'decimal'
+$identifier->format(); // 'decimal'
 $pseudo_esn = CellularIdentifier->hex()->esn()->value(); // '80a547e3'
-$identifier->specification; // 'ESN'
-$identifier->format; // 'hexadecimal'
+$identifier->specification(); // 'ESN'
+$identifier->format(); // 'hexadecimal'
 $hex_identifer = CellularIdentifier->hex()->value(); // '499602D2BC614E'
 ```
 Instantiate the CellularIdentifier object with a cellular device identifier in any format or specification.  Apply transformation methods such as `hex()` and `meid()` to change the internal state of the object.  As you do this, properties such as `specification` and `format` will change to match the current state.
