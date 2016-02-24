@@ -6,29 +6,111 @@ use Skyleaf\CellularIdentifier\Format;
 
 class ConversionTest extends PHPUnit_Framework_TestCase {
 
-  public function testHexDecConversion() {
-    $known_device = array_rand($this->exampleDevices);
-    $known_identifier = array_rand($this->exampleDevices[$known_device]);
-    $random_identifier = $this->exampleDevices[$known_device][$known_identifier];
+  /**
+   * Test format conversion when given a random specification/format.
+   *
+   * Pick three random devices; for each one, select a random specification to
+   * initialize the identifier.  Convert to hex and dec; check that value, specification,
+   * and format methods return the expected values.
+   */
+  public function testFormatMutation() {
+    for ($i = 0; $i <= 2; $i++) {
+      $known_device = array_rand($this->exampleDevices);
+      $known_identifier = array_rand($this->exampleDevices[$known_device]);
+      $random_identifier = $this->exampleDevices[$known_device][$known_identifier];
 
-    $identifier = new CellularIdentifier($random_identifier);
-    echo($identifier->specification());
-    echo($identifier->format());
-    echo($identifier->value());
-    $specification = $identifier->specification();
+      $identifier = new CellularIdentifier($random_identifier);
+      $specification = $identifier->specification();
 
-    $identifier->hex();
-    $hex_value = $identifier->value();
+      $hex_value = $identifier->hex()->value();
+      $this->assertEquals(strtoupper($this->exampleDevices[$known_device][$specification . Format::hexadecimal]), $hex_value);
+      $this->assertEquals($identifier->specification(), $specification);
+      $this->assertEquals($identifier->format(), Format::hexadecimal);
 
 
-    $identifier->dec();
-    $dec_value = $identifier->value();
-
-    // Hex fails for UTStarcom example with all-decimal hex digits.
-    $this->assertEquals(strtoupper($this->exampleDevices[$known_device][$specification . 'hex']), $hex_value);
-    $this->assertEquals($this->exampleDevices[$known_device][$specification . 'dec'], $dec_value);
-
+      $dec_value = $identifier->dec()->value();
+      $this->assertEquals($this->exampleDevices[$known_device][$specification . Format::decimal], $identifier->value());
+      $this->assertEquals($identifier->specification(), $specification);
+      $this->assertEquals($identifier->format(), Format::decimal);
+    }
   }
+
+  /**
+   * Test format conversion when given a random specification/format.
+   *
+   * Pick three random devices; for each one, select a random specification to
+   * initialize the identifier.  Convert to hex and dec; check that value, specification,
+   * and format methods return the expected values.
+   */
+  public function testSpecificationMutation() {
+    for ($i = 0; $i <= 2; $i++) {
+      $known_device = array_rand($this->exampleDevices);
+      $known_identifier = array_rand($this->exampleDevices[$known_device]);
+      $random_identifier = $this->exampleDevices[$known_device][$known_identifier];
+
+      $identifier = new CellularIdentifier($random_identifier);
+      $format = $identifier->format();
+
+      // You can only convert specifications from MEID to ESN.
+      // Test mutating to every format, even those that have no implementation,
+      // and then finally mutate to ESN.
+      $esn_value = $identifier->meid()->imei()->iccid()->esn()->value();
+
+      $php53_array_key = Specification::ESN . $format;
+
+      $this->assertEquals(strtoupper($this->exampleDevices[$known_device][$php53_array_key]), $esn_value);
+      $this->assertEquals($identifier->specification(), Specification::ESN);
+      $this->assertEquals($identifier->format(), $format);
+    }
+  }
+
+  /**
+   * Test format conversion when given a random specification/format.
+   *
+   * Pick three random devices; for each one, select a random specification to
+   * initialize the identifier.  Convert to hex and dec; check that value, specification,
+   * and format methods return the expected values.
+   */
+  public function testMEIDToESNMutation() {
+    for ($i = 0; $i <= 4; $i++) {
+      $known_device = array_rand($this->exampleDevices);
+      $known_identifier = array_rand($this->exampleDevices[$known_device]);
+      $random_identifier = $this->exampleDevices[$known_device][$known_identifier];
+
+      $identifier = new CellularIdentifier($random_identifier);
+      $specification = $identifier->specification();
+      $format = $identifier->format();
+
+      // This test is only concerned with the MEID->ESN special case.
+      if ($specification == Specification::MEID) {
+          // Re-form $identifier->cachedValues.
+        $value_keys = array(
+          Specification::MEID . Format::hexadecimal,
+          Specification::MEID . Format::decimal,
+          Specification::ESN . Format::hexadecimal,
+          Specification::ESN . Format::decimal,
+        );
+
+        // Perform all mutations.
+        // We intentionally mutate to a decimal format before the ESN conversion,
+        // to make sure that the library can handle this.
+        $identifier_values = array();
+        $identifier_values[] = $identifier->hex()->value();
+        $identifier_values[] = $identifier->dec()->value();
+        $identifier_values[] = $identifier->esn()->hex()->value();
+        $identifier_values[] = $identifier->dec()->value();
+
+
+        $values = array_combine($value_keys, $identifier_values);
+
+        // Check to make sure that our values match the pre-computed ones we expect.
+        foreach ($values as $key => $value) {
+          $this->assertEquals(strtoupper($this->exampleDevices[$known_device][$key]), $values[$key]);
+        }
+      }
+    }
+  }
+
 
   // IMEI should not convert to MEID decimal.
 
@@ -43,7 +125,7 @@ class ConversionTest extends PHPUnit_Framework_TestCase {
 
 
 
-  // Private nternal state.
+  // Private internal state.
 
 
 

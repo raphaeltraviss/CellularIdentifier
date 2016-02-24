@@ -31,34 +31,23 @@ class CellularIdentifier implements CellularIdentifierInterface {
   }
 
   public function esn() {
-    // Test to see if we have a valid hex MEID.
     $this->mutateToSpecification(Specification::ESN);
     return $this;
   }
 
   public function meid() {
-    // No other formats besides MEID can be converted to MEID.
-    // IMEIs are valid MEIDs, but not for purposes of calculation, since the radix is different.
+    $this->mutateToSpecification(Specification::MEID);
     return $this;
   }
 
   public function imei() {
-    // No other formats besides IMEI can be converted to IMEI.
-    // Be aware that some devices have TWO identifiers.  This would be true for
-    // phones that have both a CDMA and a GSM radio; they may have one unique identifier
-    // for each.  In which case, the IMEI/MEID printed on the label will not match
-    // the value you get from this conversion: nothing we can do about it.  Other
-    // devices, such as the Apple iPhone, use the same identifier for both.
+    $this->mutateToSpecification(Specification::IMEI);
     return $this;
   }
 
   public function iccid() {
-    // Not implemented.
+    $this->mutateToSpecification(Specification::ICCID);
     return $this;
-  }
-
-  public function all() {
-    return $this->cachedValues;
   }
 
   public function value() {
@@ -117,12 +106,6 @@ class CellularIdentifier implements CellularIdentifierInterface {
     return $check_digit;
   }
 
-  /**
-   * Dummy method for Travis and PHPUnit.
-   */
-  public function doSomething() {
-    return true;
-  }
 
 
 
@@ -131,6 +114,7 @@ class CellularIdentifier implements CellularIdentifierInterface {
 
 
   // Internal state
+
 
 
 
@@ -195,9 +179,7 @@ class CellularIdentifier implements CellularIdentifierInterface {
       Specification::ESN . Format::decimal,
       Specification::ESN . Format::hexadecimal,
       Specification::MEID . Format::decimal,
-      Specification::MEID . Format::hexadecimal,
-      Specification::MEID . Format::checkDigit,
-      Specification::ICCID . Format::decimal
+      Specification::MEID . Format::hexadecimal
     );
     $this->cachedValues = array_combine($cache_keys, array_fill(0, count($cache_keys), null));
 
@@ -221,12 +203,25 @@ class CellularIdentifier implements CellularIdentifierInterface {
       );
     };
 
-    $php53fixThis = $this;
+    $php53FixThis = $this;
+
     $formatter_functions = array(
-      function() use ($formatter_function, $php53fixThis) { return $formatter_function($php53fixThis->value(), 16, 10, 2, 3, 8); },
-      function() use ($formatter_function, $php53fixThis) { return $formatter_function($php53fixThis->value(), 10, 16, 3, 2, 6); },
-      function() use ($formatter_function, $php53fixThis) { return $formatter_function($php53fixThis->value(), 16, 10, 8, 10, 8); },
-      function() use ($formatter_function, $php53fixThis) { return $formatter_function($php53fixThis->value(), 10, 16, 10, 8, 6); }
+      // ESN hex to dec.
+      function($valueToConvert) use ($formatter_function) {
+        return $formatter_function($valueToConvert, 16, 10, 2, 3, 8);
+      },
+      // ESN dec to hex.
+      function($valueToConvert) use ($formatter_function, $php53FixThis) {
+        return $formatter_function($valueToConvert, 10, 16, 3, 2, 6);
+      },
+      // MEID hex to dec.
+      function($valueToConvert) use ($formatter_function, $php53FixThis) {
+        return $formatter_function($valueToConvert, 16, 10, 8, 10, 8);
+      },
+      //MEID dec to hex.
+      function($valueToConvert) use ($formatter_function, $php53FixThis) {
+        return $formatter_function($valueToConvert, 10, 16, 10, 8, 6);
+      }
     );
     $this->formatTransformations = array_combine($formatter_function_keys, $formatter_functions);
 
@@ -235,17 +230,38 @@ class CellularIdentifier implements CellularIdentifierInterface {
       Specification::MEID . Specification::ESN
     );
 
-    $specification_function = function($meid_hex) {
-      $output = '';
-      for ($i = 0; $i < strlen($meid_hex); $i += 2){
-        $output .= chr(intval(substr($meid_hex, $i, 2), 16));
-      }
-      $hash = sha1($output);
-      return strtoupper("80".substr($hash,(strlen($hash) -6)));
-    };
-
     $specification_functions = array(
-      function() { return $specification_function($this->value()); }
+      // MEID -> ESN conversion function.
+      function() use ($php53FixThis) {
+        // Given a hex identifier, returns a pseudo ESN.
+        $calculatePseudoESN = function($meid_hex) {
+          $output = '';
+          for ($i = 0; $i < strlen($meid_hex); $i += 2){
+            $output .= chr(intval(substr($meid_hex, $i, 2), 16));
+          }
+          $hash = sha1($output);
+          return strtoupper("80".substr($hash,(strlen($hash) -6)));
+        };
+
+        // Conversions to pseudo ESN must be done using the hexadecimal MEID.
+        $result = '';
+        if ($php53FixThis->format() != Format::hexadecimal) {
+          // Find the fuction to convert our current value into hex.
+          $hex_function = $php53FixThis->formatTransformations[$php53FixThis->specification . $php53FixThis->format . Format::hexadecimal];
+          // Get the hex value using the tranformation function we just found.
+          $hex_meid = $hex_function($php53FixThis->value());
+          // Calculate the pseudo ESN using the hex value we just found.
+          $pseudo_ESN = $calculatePseudoESN($hex_meid);
+          // Find yet another function to turn that pseudo ESN into our current format.
+          $esn_function = $php53FixThis->formatTransformations[Specification::ESN . Format::hexadecimal . $php53FixThis->format];
+          // Transform the pseudo ESN into our current format.
+          $result = $esn_function($pseudo_ESN);
+        } else {
+          $result = $calculatePseudoESN($php53FixThis->value());
+        }
+
+        return $result;
+      }
     );
 
     $this->specificationTransformations = array_combine($specification_function_keys, $specification_functions);
@@ -288,7 +304,6 @@ class CellularIdentifier implements CellularIdentifierInterface {
     if(preg_match('/^[0-9]{15}$/', $input)){
       $this->specification = Specification::IMEI;
       $this->format = Format::hexadecimal;
-      // maybe set radix here?
 
     // An IMEI without a check digit is 14 characters long, all of them decimal.
     } else if(preg_match('/^[0-9]{14}$/', $input)){
@@ -334,14 +349,12 @@ class CellularIdentifier implements CellularIdentifierInterface {
     if (isset($this->cachedValues[$this->specification . $format])) {
       $this->format = $format;
     }
-    else {
+    else if (isset($this->formatTransformations[$this->specification . $this->format . $format])) {
       $conversion_function = $this->formatTransformations[$this->specification . $this->format . $format];
-      if (isset($conversion_function)) {
-        $conversion_result = $conversion_function();
-        if ($conversion_result) {
-          $this->cachedValues[$this->specification . $format] = $conversion_result;
-          $this->format = $format;
-        }
+      $conversion_result = $conversion_function($this->value());
+      if ($conversion_result) {
+        $this->cachedValues[$this->specification . $format] = $conversion_result;
+        $this->format = $format;
       }
     }
   }
@@ -355,14 +368,12 @@ class CellularIdentifier implements CellularIdentifierInterface {
     if (isset($this->cachedValues[$specification . $this->format])) {
       $this->specification = $specification;
     }
-    else {
+    else if (isset($this->specificationTransformations[$this->specification . $specification])) {
       $conversion_function = $this->specificationTransformations[$this->specification . $specification];
-      if (isset($conversion_function)) {
-        $conversion_result = $conversion_function();
-        if ($conversion_result) {
-          $this->cachedValues[$specification . $this->format] = $conversion_result;
-          $this->specification = $specification;
-        }
+      $conversion_result = $conversion_function();
+      if ($conversion_result) {
+        $this->cachedValues[$specification . $this->format] = $conversion_result;
+        $this->specification = $specification;
       }
     }
   }

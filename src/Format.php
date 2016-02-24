@@ -11,5 +11,4 @@ namespace Skyleaf\CellularIdentifier;
 abstract class Format {
   const decimal = 'dec';
   const hexadecimal = 'hex';
-  const checkDigit = 'check';
 }

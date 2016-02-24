@@ -36,12 +36,22 @@ interface CellularIdentifierInterface {
   /**
    * Transforms a device identifier to conform to an MEID specification.
    *
+   * No other formats besides MEID can be converted to MEID.
+   * IMEIs are valid MEIDs, but not for purposes of calculation, since the radix is different.
+   *
    * @return: CellularIdentifier
    */
   public function meid();
 
   /**
    * Transforms a device identifier to conform to an IMEI specification.
+   *
+   * No other formats besides IMEI can be converted to IMEI.
+   * Be aware that some devices have TWO identifiers.  This would be true for
+   * phones that have both a CDMA and a GSM radio; they may have one unique identifier
+   * for each.  In which case, the two IMEI/MEIDs on the label will not match.  Other
+   * devices, such as the Apple iPhone, use the same identifier for both, in which
+   * case, a valid IMEI is also a valid MEID.
    *
    * @return: CellularIdentifier
    */
@@ -53,13 +63,6 @@ interface CellularIdentifierInterface {
    * @return: CellularIdentifier
    */
   public function iccid();
-
-  /**
-   * Do all transformations that are valid for the current identifier.
-   *
-   * @return: array
-   */
-  public function all();
 
   /**
    * Returns the value of the check digit for the current specification and format.
