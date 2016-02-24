@@ -4,7 +4,7 @@ use Skyleaf\CellularIdentifier\CellularIdentifier;
 use Skyleaf\CellularIdentifier\Specification;
 use Skyleaf\CellularIdentifier\Format;
 
-class ConversionTest extends PHPUnit_Framework_TestCase {
+class CellularIdentifierTest extends PHPUnit_Framework_TestCase {
 
   /**
    * Test format conversion when given a random specification/format.
@@ -107,6 +107,35 @@ class ConversionTest extends PHPUnit_Framework_TestCase {
           $this->assertEquals(strtoupper($this->exampleDevices[$known_device][$key]), $values[$key]);
         }
       }
+    }
+  }
+
+  public function testIteration() {
+    for ($i = 0; $i <= 3; $i++) {
+      $known_device = array_rand($this->exampleDevices);
+      $known_identifier = array_rand($this->exampleDevices[$known_device]);
+      $random_identifier = $this->exampleDevices[$known_device][$known_identifier];
+
+      $identifier = new CellularIdentifier($random_identifier);
+      $specification = $identifier->specification();
+
+      // Fill the cached values with as many conversions as possible.
+      $identifier->hex()->dec()->esn()->hex()->dec();
+
+      // ESNs should generate a hex/dec.  MEID should generate two hex/dev pairs.
+      $expected_count = 2;
+      if ($specification == Specification::MEID) {
+        $expected_count = 4;
+      }
+
+      $actual_count = 0;
+      foreach ($identifier as $specification_and_format => $value) {
+        if (isset($value)) {
+          $actual_count++;
+        }
+      }
+
+      $this->assertEquals($expected_count, $actual_count);
     }
   }
 

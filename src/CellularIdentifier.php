@@ -4,6 +4,7 @@
  */
 
 namespace Skyleaf\CellularIdentifier;
+use \Iterator;
 
 /**
  * Converts between various formats and specifications of cellular devices.
@@ -19,7 +20,22 @@ namespace Skyleaf\CellularIdentifier;
  *
  * @implements CellularIdentifierInterface
  */
-class CellularIdentifier implements CellularIdentifierInterface {
+class CellularIdentifier implements CellularIdentifierInterface, Iterator {
+
+
+
+
+
+
+
+  // CellularIdentifierInterface public API.
+
+
+
+
+
+
+
   public function hex() {
     $this->mutateToFormat(Format::hexadecimal);
     return $this;
@@ -108,40 +124,9 @@ class CellularIdentifier implements CellularIdentifierInterface {
 
 
 
+  // Protected public API to support CellularIdentifierInterface.
 
 
-
-
-
-  // Internal state
-
-
-
-
-
-
-
-
-  /**
-   * The format of the current identifier.
-   *
-   * @var string One of Format::[format]
-   */
-  protected $format;
-
-  /**
-   * The specification of the current identifier.
-   *
-   * @var string One of Specification::[specification]
-   */
-  protected $specification;
-
-  /**
-   * An array which holds already-calculated values for the device identifier.
-   *
-   * @var array
-   */
-  protected $cachedValues = array();
 
   /**
    * Maps transformation functions to keys based on the current specification and format.
@@ -161,6 +146,142 @@ class CellularIdentifier implements CellularIdentifierInterface {
    */
   protected $specificationTransformations = array();
 
+  /**
+   * Filter input text through patterns, and set internal state based on the results.
+   *
+   * @var: string $input The input text to process.
+   *
+   * @return: boolean true if the input could be filtered, false if it is invalid.
+   */
+  protected function filterInput($input) {
+    // An IMEI with check digit is 15 characters long, all of them decimal.
+    // IMEI are handled internally the same as hex MEID.  An identifier that matches
+    // the pattern for an IMEI could actually be an MEID.
+    if (preg_match('/^[0-9]{20}$/', $input)) {
+      $this->specification = Specification::ICCID;
+      $this->format = Format::decimal;
+
+    // An IMEI with check digit is 15 characters long, all of them decimal.
+    // IMEI are handled internally the same as hex MEID.  An identifier that matches
+    // the pattern for an IMEI could actually be an MEID.
+    } else if (preg_match('/^[0-9]{15}$/', $input)){
+      $this->specification = Specification::IMEI;
+      $this->format = Format::hexadecimal;
+
+    // An IMEI without a check digit is 14 characters long, all of them decimal.
+    } else if (preg_match('/^[0-9]{14}$/', $input)){
+      $this->specification = Specification::IMEI;
+      $this->format = Format::hexadecimal;
+
+    // An MEID in hexadecimal format is 14 characters long, all of them decimals or letters a-f in any case.
+    } else if (preg_match('/^[a-fA-F0-9]{14}$/', $input)){
+      $this->specification = Specification::MEID;
+      $this->format = Format::hexadecimal;
+
+    // An MEID in decimal format is 18 characters long, all of them decimals.
+    } else if (preg_match('/^[0-9]{18}$/', $input)){
+      $this->specification = Specification::MEID;
+      $this->format = Format::decimal;
+
+    // An ESN in hexadecimal format is 8 characters long, all of them decimals or letters a-f in any case.
+    } else if (preg_match('/^[a-fA-F0-9]{8}$/', $input)){
+      $this->specification = Specification::ESN;
+      $this->format = Format::hexadecimal;
+
+    // An ESN in decimal format is 11 characters long, all of them decimals.
+    } else if (preg_match('/^[0-9]{11}$/', $input)){
+      $this->specification = Specification::ESN;
+      $this->format = Format::decimal;
+
+    // If none of the patterns matched, then they gave us something other than a device ID.
+    } else {
+      return false;
+    }
+
+    // Cache the input value, after making it uppercase.
+    $this->cachedValues[$this->specification . $this->format] = strtoupper($input);
+    return true;
+  }
+
+
+
+  // Private internal state to support CellularIdentifierInterface.
+
+
+
+  /**
+   * The format of the current identifier.
+   *
+   * @var string One of Format::[format]
+   */
+  private $format;
+
+  /**
+   * The specification of the current identifier.
+   *
+   * @var string One of Specification::[specification]
+   */
+  private $specification;
+
+  /**
+   * An array which holds already-calculated values for the device identifier.
+   *
+   * @var array
+   */
+  private $cachedValues = array();
+
+
+
+
+
+
+
+  // Iterator public API.  This class implement Iterator itself, because we need
+  // to access private cachedValues.
+
+
+
+
+
+
+
+  public function current() {
+    $cached_value_keys = array_keys($this->cachedValues);
+    return $this->cachedValues[$cached_value_keys[$this->currentIndex]];
+  }
+
+  public function key() {
+    $cached_value_keys = array_keys($this->cachedValues);
+    return $cached_value_keys[$this->currentIndex];
+  }
+
+  public function next() {
+    $this->currentIndex++;
+  }
+
+  public function rewind() {
+    $this->currentIndex = 0;
+  }
+
+  public function valid() {
+    return $this->currentIndex <= (count($this->cachedValues) - 1);
+  }
+
+
+
+  // Private internal state to support Iterator.
+
+
+
+  /**
+   * An integer that represent our current position within the iteration of values.
+   *
+   * @var int
+   */
+  private $currentIndex = 0;
+
+
+
 
 
 
@@ -179,7 +300,8 @@ class CellularIdentifier implements CellularIdentifierInterface {
       Specification::ESN . Format::decimal,
       Specification::ESN . Format::hexadecimal,
       Specification::MEID . Format::decimal,
-      Specification::MEID . Format::hexadecimal
+      Specification::MEID . Format::hexadecimal,
+      Specification::ICCID . Format::decimal
     );
     $this->cachedValues = array_combine($cache_keys, array_fill(0, count($cache_keys), null));
 
@@ -294,61 +416,11 @@ class CellularIdentifier implements CellularIdentifierInterface {
 
 
   /**
-   * Filter input text through patterns, and set internal state based on the results.
-   *
-   * @var: string $input The input text to process.
-   *
-   * @return: boolean true if the input could be filtered, false if it is invalid.
-   */
-  protected function filterInput($input) {
-    // An IMEI with check digit is 15 characters long, all of them decimal.
-    // IMEI are handled internally the same as hex MEID.  An identifier that matches
-    // the pattern for an IMEI could actually be an MEID.
-    if(preg_match('/^[0-9]{15}$/', $input)){
-      $this->specification = Specification::IMEI;
-      $this->format = Format::hexadecimal;
-
-    // An IMEI without a check digit is 14 characters long, all of them decimal.
-    } else if(preg_match('/^[0-9]{14}$/', $input)){
-      $this->specification = Specification::IMEI;
-      $this->format = Format::hexadecimal;
-
-    // An MEID in hexadecimal format is 14 characters long, all of them decimals or letters a-f in any case.
-    } else if(preg_match('/^[a-fA-F0-9]{14}$/', $input)){
-      $this->specification = Specification::MEID;
-      $this->format = Format::hexadecimal;
-
-    // An MEID in decimal format is 18 characters long, all of them decimals.
-    } else if(preg_match('/^[0-9]{18}$/', $input)){
-      $this->specification = Specification::MEID;
-      $this->format = Format::decimal;
-
-    // An ESN in hexadecimal format is 8 characters long, all of them decimals or letters a-f in any case.
-    } else if(preg_match('/^[a-fA-F0-9]{8}$/', $input)){
-      $this->specification = Specification::ESN;
-      $this->format = Format::hexadecimal;
-
-    // An ESN in decimal format is 11 characters long, all of them decimals.
-    } else if(preg_match('/^[0-9]{11}$/', $input)){
-      $this->specification = Specification::ESN;
-      $this->format = Format::decimal;
-
-    // If none of the patterns matched, then they gave us something other than a device ID.
-    } else {
-      return false;
-    }
-
-    // Cache the input value, after making it uppercase.
-    $this->cachedValues[$this->specification . $this->format] = strtoupper($input);
-    return true;
-  }
-
-  /**
    * Mutates the identifier to a given format and caches values.
    *
    * @var: string $format The format to mutate to; constant of class Format.
    */
-  protected function mutateToFormat($format) {
+  private function mutateToFormat($format) {
     if (isset($this->cachedValues[$this->specification . $format])) {
       $this->format = $format;
     }
@@ -367,7 +439,7 @@ class CellularIdentifier implements CellularIdentifierInterface {
    *
    * @var: string $specification The specification to mutate to; constant of class Specification.
    */
-  protected function mutateToSpecification($specification) {
+  private function mutateToSpecification($specification) {
     if (isset($this->cachedValues[$specification . $this->format])) {
       $this->specification = $specification;
     }
