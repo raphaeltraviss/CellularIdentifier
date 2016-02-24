@@ -1,5 +1,5 @@
 {
-    "name": "skyleaf/CellularIdentifier",
+    "name": "skyleaf/cellular-identifier",
     "description": "Converts cellular device identifiers between different specifications and formats.",
     "license": "MIT",
     "keywords": ["cellular", "device", "cellphone", "meid", "esn", "imei", "decimal", "hexadecimal"],
