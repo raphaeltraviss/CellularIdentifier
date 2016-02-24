@@ -83,7 +83,7 @@ class ConversionTest extends PHPUnit_Framework_TestCase {
 
       // This test is only concerned with the MEID->ESN special case.
       if ($specification == Specification::MEID) {
-          // Re-form $identifier->cachedValues.
+        // Re-form $identifier->cachedValues.
         $value_keys = array(
           Specification::MEID . Format::hexadecimal,
           Specification::MEID . Format::decimal,
@@ -94,13 +94,12 @@ class ConversionTest extends PHPUnit_Framework_TestCase {
         // Perform all mutations.
         // We intentionally mutate to a decimal format before the ESN conversion,
         // to make sure that the library can handle this.
-        $identifier_values = array();
-        $identifier_values[] = $identifier->hex()->value();
-        $identifier_values[] = $identifier->dec()->value();
-        $identifier_values[] = $identifier->esn()->hex()->value();
-        $identifier_values[] = $identifier->dec()->value();
-
-
+        $identifier_values = array(
+          $identifier->hex()->value(),
+          $identifier->dec()->value(),
+          $identifier->esn()->hex()->value(),
+          $identifier->dec()->value()
+        );
         $values = array_combine($value_keys, $identifier_values);
 
         // Check to make sure that our values match the pre-computed ones we expect.
