@@ -232,10 +232,10 @@ class CellularIdentifier implements CellularIdentifierInterface {
       Specification::MEID . Specification::ESN
     );
 
+    $php53FixProtectedProperty = $this->formatTransformations;
     $specification_functions = array(
       // MEID -> ESN conversion function.
-      var $php53FixProtectedProperty = $this->formatTransformations;
-      function() use ($php53FixThis, $php53FixMe, $php53FixMeToo) {
+      function() use ($php53FixThis, $php53FixProtectedProperty) {
         // Given a hex identifier, returns a pseudo ESN.
         $calculatePseudoESN = function($meid_hex) {
           $output = '';
