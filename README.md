@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/raphaeltraviss/CellularIdentifier.svg?branch=1.0)](https://travis-ci.org/raphaeltraviss/CellularIdentifier)
+
 # Why does this exist?
 
 Device identifiers from cellular equipment can have many different formats and follow multiple specifications.  Therefore, the same device can be referenced by many different device identifiers, which is a problem, because cellular serial numbers are often used as unique identifiers.
@@ -9,7 +11,7 @@ This class will allow you to convert a cellular device identification number fro
 // All identifiers and conversion values in this example are fictitious.
 $identifier = new CellularIdentifier('123456789012345678');
 $identifier->specification; // 'MEID'
-$identifier->format; // 'decimal' 
+$identifier->format; // 'decimal'
 $pseudo_esn = CellularIdentifier->hex()->esn()->value(); // '80a547e3'
 $identifier->specification; // 'ESN'
 $identifier->format; // 'hexadecimal'
