@@ -14,24 +14,30 @@ class CellularIdentifierTest extends PHPUnit_Framework_TestCase {
    * and format methods return the expected values.
    */
   public function testFormatMutation() {
-    for ($i = 0; $i <= 2; $i++) {
-      $known_device = array_rand($this->exampleDevices);
-      $known_identifier = array_rand($this->exampleDevices[$known_device]);
-      $random_identifier = $this->exampleDevices[$known_device][$known_identifier];
+    for ($i = 0; $i <= 10; $i++) {
+      $device_index = array_rand($this->exampleDevices);
+      $identifier_key = array_rand($this->exampleDevices[$device_index]);
+      $random_identifier = $this->exampleDevices[$device_index][$identifier_key];
 
       $identifier = new CellularIdentifier($random_identifier);
       $specification = $identifier->specification();
 
-      $hex_value = $identifier->hex()->value();
-      $this->assertEquals(strtoupper($this->exampleDevices[$known_device][$specification . Format::hexadecimal]), $hex_value);
-      $this->assertEquals($identifier->specification(), $specification);
-      $this->assertEquals($identifier->format(), Format::hexadecimal);
+      // Only ESN and MEID have hex/dec equivalence.
+      if ($specification == Specification::ESN || $specification == Specification::MEID) {
+        $hex_value = $identifier->hex()->value();
+        // Check that the calculated value matches the expected value.
+        $this->assertEquals(strtoupper($this->exampleDevices[$device_index][$specification . $identifier->format()]), $hex_value);
+        // Check that the specification didn't change.
+        $this->assertEquals($identifier->specification(), $specification);
+        // Check that the format changed to hexadecimal.
+        $this->assertEquals($identifier->format(), Format::hexadecimal);
 
-
-      $dec_value = $identifier->dec()->value();
-      $this->assertEquals($this->exampleDevices[$known_device][$specification . Format::decimal], $identifier->value());
-      $this->assertEquals($identifier->specification(), $specification);
-      $this->assertEquals($identifier->format(), Format::decimal);
+        // Change the format to decimal, and verifiy only the format changed.
+        $dec_value = $identifier->dec()->value();
+        $this->assertEquals($this->exampleDevices[$device_index][$specification . Format::decimal], $dec_value);
+        $this->assertEquals($identifier->specification(), $specification);
+        $this->assertEquals($identifier->format(), Format::decimal);
+      }
     }
   }
 
@@ -43,10 +49,10 @@ class CellularIdentifierTest extends PHPUnit_Framework_TestCase {
    * and format methods return the expected values.
    */
   public function testSpecificationMutation() {
-    for ($i = 0; $i <= 2; $i++) {
-      $known_device = array_rand($this->exampleDevices);
-      $known_identifier = array_rand($this->exampleDevices[$known_device]);
-      $random_identifier = $this->exampleDevices[$known_device][$known_identifier];
+    for ($i = 0; $i <= 10; $i++) {
+      $device_index = array_rand($this->exampleDevices);
+      $identifier_key = array_rand($this->exampleDevices[$device_index]);
+      $random_identifier = $this->exampleDevices[$device_index][$identifier_key];
 
       $identifier = new CellularIdentifier($random_identifier);
       $format = $identifier->format();
@@ -58,7 +64,7 @@ class CellularIdentifierTest extends PHPUnit_Framework_TestCase {
 
       $php53_array_key = Specification::ESN . $format;
 
-      $this->assertEquals(strtoupper($this->exampleDevices[$known_device][$php53_array_key]), $esn_value);
+      $this->assertEquals(strtoupper($this->exampleDevices[$device_index][$php53_array_key]), $esn_value);
       $this->assertEquals($identifier->specification(), Specification::ESN);
       $this->assertEquals($identifier->format(), $format);
     }
@@ -72,10 +78,10 @@ class CellularIdentifierTest extends PHPUnit_Framework_TestCase {
    * and format methods return the expected values.
    */
   public function testMEIDToESNMutation() {
-    for ($i = 0; $i <= 4; $i++) {
-      $known_device = array_rand($this->exampleDevices);
-      $known_identifier = array_rand($this->exampleDevices[$known_device]);
-      $random_identifier = $this->exampleDevices[$known_device][$known_identifier];
+    for ($i = 0; $i <= 10; $i++) {
+      $device_index = array_rand($this->exampleDevices);
+      $identifier_key = array_rand($this->exampleDevices[$device_index]);
+      $random_identifier = $this->exampleDevices[$device_index][$identifier_key];
 
       $identifier = new CellularIdentifier($random_identifier);
       $specification = $identifier->specification();
@@ -104,49 +110,78 @@ class CellularIdentifierTest extends PHPUnit_Framework_TestCase {
 
         // Check to make sure that our values match the pre-computed ones we expect.
         foreach ($values as $key => $value) {
-          $this->assertEquals(strtoupper($this->exampleDevices[$known_device][$key]), $values[$key]);
+          $this->assertEquals(strtoupper($this->exampleDevices[$device_index][$key]), $values[$key]);
         }
       }
     }
   }
 
   public function testIteration() {
-    for ($i = 0; $i <= 3; $i++) {
-      $known_device = array_rand($this->exampleDevices);
-      $known_identifier = array_rand($this->exampleDevices[$known_device]);
-      $random_identifier = $this->exampleDevices[$known_device][$known_identifier];
+    for ($i = 0; $i <= 10; $i++) {
+      $device_index = array_rand($this->exampleDevices);
+      $identifier_key = array_rand($this->exampleDevices[$device_index]);
+      $random_identifier = $this->exampleDevices[$device_index][$identifier_key];
 
       $identifier = new CellularIdentifier($random_identifier);
       $specification = $identifier->specification();
 
       // Fill the cached values with as many conversions as possible.
-      $identifier->hex()->dec()->esn()->hex()->dec();
+      $identifier->meid()->hex()->dec()->esn()->hex()->dec();
 
       // ESNs should generate a hex/dec.  MEID should generate two hex/dev pairs.
-      $expected_count = 2;
-      if ($specification == Specification::MEID) {
-        $expected_count = 4;
+      $expected_count = 0;
+      switch ($specification) {
+        case Specification::IMEI:
+          $expected_count = 5;
+          break;
+        case Specification::MEID:
+          $expected_count = 4;
+          break;
+        case Specification::ESN:
+          $expected_count = 2;
+          break;
+        default:
+          $expected_count = 1;
+          break;
       }
 
       $actual_count = 0;
+      print "|  All values for " . $random_identifier . "\n";
       foreach ($identifier as $specification_and_format => $value) {
         if (isset($value)) {
           $actual_count++;
+          print "|  " . $specification_and_format . " - " . $value . "\n";
         }
       }
+      print "------------------------------\n";
 
       $this->assertEquals($expected_count, $actual_count);
     }
   }
 
+  public function testCheckCalculation() {
+    for ($i = 0; $i <= 10; $i++) {
+      $device_index = array_rand($this->exampleDevices);
+      $identifier_key = array_rand($this->exampleDevices[$device_index]);
+      $random_identifier = $this->exampleDevices[$device_index][$identifier_key];
 
-  // IMEI should not convert to MEID decimal.
+      $identifier = new CellularIdentifier($random_identifier);
+      $specification = $identifier->specification();
+      $format = $identifier->format();
 
-  // IMEI->hex() should not change the format.
+      // Only attempt to calculate a check digit for hexadecimal MEID.
+      if ($specification == Specification::MEID || $specification == Specification::IMEI) {
+        $expected_check_digit = $this->exampleCheckDigits[$device_index][$identifier_key];
+        if ($expected_check_digit) {
+          $this->assertEquals($expected_check_digit, $identifier->checkDigit());
+        }
+      } else {
+        $this->assertFalse($identifier->checkDigit());
+      }
+    }
+  }
 
-  // ESN->meid should not change the specification.
 
-  // IMEI->MEID or ESN should not change the specification.
 
 
 
@@ -163,13 +198,18 @@ class CellularIdentifierTest extends PHPUnit_Framework_TestCase {
   /**
    * A list of imaginary devices, with pre-calculated values.
    *
-   * In order to accurately test this libary agains actual device identifiers, these
+   * In order to accurately test this library against actual device identifiers, these
    * made-up values are inside the valid manufacturer prefix and serial number ranges,
    * meaning that they could intersect with an actual device, somewhere: if this
-   * occurs, it is purely coincidental.  Unfortunaley the MEID specification does
-   * not define any ranges for testing and examples. Filled during initialization.
+   * occurs, it is purely coincidental.  The MEID specification does not define any
+   * ranges for testing and examples. Filled during initialization.
    */
   protected $exampleDevices = array();
+
+  /**
+   * A list of check digits to match the formats of the example devices.
+   */
+  protected $exampleCheckDigits = array();
 
 
 
@@ -222,13 +262,25 @@ class CellularIdentifierTest extends PHPUnit_Framework_TestCase {
     $lg_device = array_combine($device_array_keys, $lg_values);
 
     $apple_values = array(
-      '35695706001456',
+      '35695706001456', // Test IMEI also valid as an MEID.
       '089609600600005206',
-      '80AAD01F',
+      '80Aad01F',
       '12811194399'
     );
     $apple_device = array_combine($device_array_keys, $apple_values);
 
     $this->exampleDevices = array($starcom_device, $samsung_device, $lg_device, $apple_device);
+
+    $checkDigitValues = array(
+      array('6', false), // starcom check digits.
+      array(false, false), // samsung check digits.
+      array(false, false), // LG check digits.
+      array('1', false) // Apple check digits.
+    );
+    foreach($checkDigitValues as $value) {
+      $this->exampleCheckDigits[] = array_combine(array(
+        Specification::MEID . Format::hexadecimal,
+        Specification::MEID . Format::decimal), $value);
+    }
   }
 }

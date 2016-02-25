@@ -70,7 +70,7 @@ interface CellularIdentifierInterface {
    * The check digit is never included in $this->value(); you need to specifically
    * ask for it using this method, and append it yourself.
    *
-   * @return: int
+   * @return: string
    */
   public function checkDigit();
 

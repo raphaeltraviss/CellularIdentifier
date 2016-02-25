@@ -24,7 +24,7 @@ If any additional mobile identifier specifications and formats appear in the fut
   }
 ```
 
-#### Converting between formats; returning a single values:
+#### Converting between formats; returning a single value:
 ```php
   $identifier = new CellularIdentifier('123456789012345678');
   if ($identifier) {
@@ -48,10 +48,10 @@ If any additional mobile identifier specifications and formats appear in the fut
     // Do as many conversions as you want.
     $identifier->hex()->dec()->esn()->hex()->dec();
 
-    // Only the valid values the given identifier will be non-null.
+    // Only the valid spec/format values for the given identifier will be non-null.
     foreach ($identifier as $specification_and_format => $value) {
       if (isset($value)) {
-        print $value;
+        print $specification_and_format . $value . "\n";
       }
     }
   }
@@ -71,3 +71,13 @@ If any additional mobile identifier specifications and formats appear in the fut
 Since *so many* strings are being used to reference transformation functions and cached values, you will notice liberal use of `AbstractClass::someconstant`.  This is to reduce runtime errors for mis-typing strings, and also serves as a conceptual model which says, "These are specifications and formats, not just strings of characters."  Using abstract class constants is the simplest way to mimic an `enum` in PHP.
 
 Also, you will notice we had to take liberties to make this class work in PHP 5.3, which has some minor array key and closure deficiencies.
+
+
+
+# Limitations
+
+#### All-decimal MEID inputs
+There is some confusion between MEID and IMEI.  Some devices, such as Motorola world phones, have two separate radios; in which case, the IMEI and MEID will have nothing to do with each other.  Some devices, such as the Apple iPhone, use the IMEI as an MEID.  For calculation purposes, IMEI are base-10, and  MEID are base-16; which means that the check digit calculation for an all-decimal IMEI (base-10) and an all-decimal MEID (base-16) will be different, even though they contain the same decimal digits.  Therefore, if you instantiate a CellularIdentifier object with an all-decimal pattern that could be either an IMEI or an MEID, we assume that the pattern in an IMEI.
+
+#### Check digit calculations
+Only check digit calculations for decimal IMEIs are supported.
