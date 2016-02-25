@@ -296,12 +296,12 @@ class CellularIdentifier implements CellularIdentifierInterface, Iterator {
   public function __construct($inputIdentifier) {
     // Initialize cached values as null.
     $cache_keys = array(
-      Specification::ESN . Format::decimal,
-      Specification::ESN . Format::hexadecimal,
-      Specification::MEID . Format::decimal,
-      Specification::MEID . Format::hexadecimal,
+      Specification::ICCID . Format::decimal,
       Specification::IMEI . Format::decimal,
-      Specification::ICCID . Format::decimal
+      Specification::MEID . Format::hexadecimal,
+      Specification::MEID . Format::decimal,
+      Specification::ESN . Format::hexadecimal,
+      Specification::ESN . Format::decimal,
     );
     $this->cachedValues = array_combine($cache_keys, array_fill(0, count($cache_keys), null));
 
