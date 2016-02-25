@@ -59,7 +59,7 @@ If any additional mobile identifier specifications and formats appear in the fut
 
 #### Calculating a check digit:
 ```php
-  $identifier = new CellularIdentifier('99990000000000');
+  $identifier = new CellularIdentifier('99990000000001');
 
   if ($identifier) {
     $check_digit = $identifier->checkDigit();
