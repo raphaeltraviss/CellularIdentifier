@@ -2,9 +2,8 @@
 /**
  * Containes the CellularIdentifier class.
  */
-
 namespace Skyleaf\CellularIdentifier;
-use \Iterator;
+use Iterator;
 
 /**
  * Converts between various formats and specifications of cellular devices.

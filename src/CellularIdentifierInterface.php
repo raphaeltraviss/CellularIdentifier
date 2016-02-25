@@ -2,7 +2,6 @@
 /**
  * Containes the CellularIdentifierInterface interface.
  */
-
 namespace Skyleaf\CellularIdentifier;
 
 /**

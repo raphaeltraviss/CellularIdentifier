@@ -1,5 +1,4 @@
 <?php
-
 use Skyleaf\CellularIdentifier\CellularIdentifier;
 use Skyleaf\CellularIdentifier\Specification;
 use Skyleaf\CellularIdentifier\Format;

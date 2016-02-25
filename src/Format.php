@@ -2,7 +2,6 @@
 /**
  * Containes the abstract Format class.
  */
-
 namespace Skyleaf\CellularIdentifier;
 
 /**

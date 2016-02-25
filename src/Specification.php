@@ -2,7 +2,6 @@
 /**
  * Contains the Specification abstract class.
  */
-
 namespace Skyleaf\CellularIdentifier;
 
 /**
