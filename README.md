@@ -20,7 +20,7 @@ If any additional mobile identifier specifications and formats appear in the fut
   if($identifier) {
     // Iterate over identifier results.
   } else {
-    // Set an error message.
+    // Do error handling.
   }
 ```
 
