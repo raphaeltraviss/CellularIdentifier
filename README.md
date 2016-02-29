@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/raphaeltraviss/CellularIdentifier.svg?branch=1.0)](https://travis-ci.org/raphaeltraviss/CellularIdentifier)
+[![Build Status](https://travis-ci.org/raphaeltraviss/CellularIdentifier.svg?branch=1.x)](https://travis-ci.org/raphaeltraviss/CellularIdentifier)
 
 # Why does this exist?
 
