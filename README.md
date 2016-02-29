@@ -28,12 +28,12 @@ If any additional mobile identifier specifications and formats appear in the fut
 ```php
   $identifier = new CellularIdentifier('123456789012345678');
   if ($identifier) {
-    $identifier->specification(); // 'MEID'
-    $identifier->format(); // 'decimal'
+    $identifier->specification(); // 'meid'
+    $identifier->format(); // '10'
 
     $pseudo_esn = $identifier->hex()->esn()->value(); // '80FFFFFF'
-    $identifier->specification(); // 'ESN'
-    $identifier->format(); // 'hexadecimal'
+    $identifier->specification(); // 'esn'
+    $identifier->format(); // '16'
 
     // You could have also done $identifier->esn()->hex()->value().
   }
