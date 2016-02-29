@@ -31,7 +31,7 @@ class CellularIdentifierTest extends PHPUnit_Framework_TestCase {
         // Check that the format changed to hexadecimal.
         $this->assertEquals($identifier->format(), Format::hexadecimal);
 
-        // Change the format to decimal, and verifiy only the format changed.
+        // Change the format to decimal, and verify only the format changed.
         $dec_value = $identifier->dec()->value();
         $this->assertEquals($this->exampleDevices[$device_index][$specification . Format::decimal], $dec_value);
         $this->assertEquals($identifier->specification(), $specification);

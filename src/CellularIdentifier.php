@@ -294,7 +294,7 @@ class CellularIdentifier implements CellularIdentifierInterface, Iterator {
 
 
   public function __construct($inputIdentifier) {
-    // Initialize cached values as null.
+    // Initialize cached values as null; done here due to PHP 5.3 array key limitations.
     $cache_keys = array(
       Specification::ICCID . Format::decimal,
       Specification::IMEI . Format::decimal,
