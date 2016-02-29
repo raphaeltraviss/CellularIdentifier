@@ -18,7 +18,7 @@ If any additional mobile identifier specifications and formats appear in the fut
   $identifier = new CellularIdentifier('A1000001FFFFFF');
 
   if($identifier) {
-    // Do something with the identifier.
+    // Iterate over identifier results.
   } else {
     // Set an error message.
   }
