@@ -77,6 +77,10 @@ class CellularIdentifier implements CellularIdentifierInterface, Iterator {
     return $this->format;
   }
 
+  public function isValid() {
+    return $this->isValid;
+  }
+
   public function manufacturer() {
     // Not implemented yet.
     return null;
@@ -124,6 +128,13 @@ class CellularIdentifier implements CellularIdentifierInterface, Iterator {
 
 
   /**
+   * Stored state that tells you if the current identifier is valid or not.
+   *
+   * @var boolean
+   */
+  protected $isValid = false;
+
+  /**
    * Maps transformation functions to keys based on the current specification and format.
    *
    * Keys are of the form Specification . Format (original) . Format (desired).
@@ -155,6 +166,7 @@ class CellularIdentifier implements CellularIdentifierInterface, Iterator {
     if (preg_match('/^[0-9]{20}$/', $input)) {
       $this->specification = Specification::ICCID;
       $this->format = Format::decimal;
+      $this->isValid = true;
 
     // An IMEI with check digit is 15 characters long, all of them decimal.
     // IMEI are handled internally the same as hex MEID.  An identifier that matches
@@ -162,6 +174,7 @@ class CellularIdentifier implements CellularIdentifierInterface, Iterator {
     } else if (preg_match('/^[0-9]{15}$/', $input)) {
       $this->specification = Specification::IMEI;
       $this->format = Format::decimal;
+      $this->isValid = true;
       // Save the check digit and trim it off.
       $check_digit = substr($input, 14, 1);
       $input = substr($input, 0, 14);
@@ -171,26 +184,31 @@ class CellularIdentifier implements CellularIdentifierInterface, Iterator {
     } else if (preg_match('/^[0-9]{14}$/', $input)) {
       $this->specification = Specification::IMEI;
       $this->format = Format::decimal;
+      $this->isValid = true;
 
     // An MEID in hexadecimal format is 14 characters long, all of them decimals or letters a-f in any case.
     } else if (preg_match('/^[a-fA-F0-9]{14}$/', $input)) {
       $this->specification = Specification::MEID;
       $this->format = Format::hexadecimal;
+      $this->isValid = true;
 
     // An MEID in decimal format is 18 characters long, all of them decimals.
     } else if (preg_match('/^[0-9]{18}$/', $input)) {
       $this->specification = Specification::MEID;
       $this->format = Format::decimal;
+      $this->isValid = true;
 
     // An ESN in hexadecimal format is 8 characters long, all of them decimals or letters a-f in any case.
     } else if (preg_match('/^[a-fA-F0-9]{8}$/', $input)) {
       $this->specification = Specification::ESN;
       $this->format = Format::hexadecimal;
+      $this->isValid = true;
 
     // An ESN in decimal format is 11 characters long, all of them decimals.
     } else if (preg_match('/^[0-9]{11}$/', $input)) {
       $this->specification = Specification::ESN;
       $this->format = Format::decimal;
+      $this->isValid = true;
 
     // If none of the patterns matched, then they gave us something other than a device ID.
     } else {

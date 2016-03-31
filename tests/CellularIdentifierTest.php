@@ -3,6 +3,13 @@ use Skyleaf\CellularIdentifier\CellularIdentifier;
 use Skyleaf\CellularIdentifier\Specification;
 use Skyleaf\CellularIdentifier\Format;
 
+/**
+   * General test suite for CellularIdentifier.
+   *
+   * We want to make sure that our tests pass for a variety of possible
+   * cellular identifier formats, and so most of the tests are run in 
+   * loops where we randomly select identifiers from different devices.
+   */
 class CellularIdentifierTest extends PHPUnit_Framework_TestCase {
 
   /**
@@ -180,14 +187,42 @@ class CellularIdentifierTest extends PHPUnit_Framework_TestCase {
     }
   }
 
+  public function testInvalidIdentifier() {
+    // Test that a bogus identifier is not considered valid.
+    $invalid_identifier = new CellularIdentifier('9900046577a2e');
+    $this->assertFalse($invalid_identifier->isValid());
+
+    // Pull out a random identifier, all of which should be valid
+    for ($i = 0; $i <= 10; $i++) {
+      $identifier = new CellularIdentifier($this->randomIdentifier());
+      $this->assertTrue($identifier->isValid());
+    }
+  }
+
+
+
+  // Private utility methods reserved for this particular test.
+
+  /**
+   * Gets a random cellular identifier from our list of sample values.
+   *
+   * Normally this method isn't used, since most tests need to match up specific formats
+   * for each specific device, and so they do the below manually.
+   */
+  private function randomIdentifier() {
+    $random_device_index = array_rand($this->exampleDevices);
+    $random_identifier_key = array_rand($this->exampleDevices[$random_device_index]);
+    $random_identifier = $this->exampleDevices[$random_device_index][$random_identifier_key];
+
+    return $random_identifier;
+  }
 
 
 
 
 
 
-
-  // Private internal state.
+  // Protected internal state.
 
 
 
@@ -209,6 +244,8 @@ class CellularIdentifierTest extends PHPUnit_Framework_TestCase {
    * A list of check digits to match the formats of the example devices.
    */
   protected $exampleCheckDigits = array();
+
+
 
 
 

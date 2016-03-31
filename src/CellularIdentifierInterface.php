@@ -93,4 +93,14 @@ interface CellularIdentifierInterface {
    * @return: string
    */
   public function specification();
+
+   /**
+   * Returns true if the constructed CellularIdentifier is valid.
+   *
+   * PHP construct functions can't return false, so you will need to check the
+   * result of this method, instead of the truthiness of the instance itself.
+   *
+   * @return: boolean
+   */
+  public function isValid();
 }
